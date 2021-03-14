@@ -1,25 +1,20 @@
 import { Request, Response } from 'express';
 
 import logger from '../utils/log';
-import { notFound, internalError } from '../utils/response';
-import Product from '../models/product';
+import { internalError } from '../utils/response';
+import * as productServices from '../services/productServices';
 
 // POST
 // service to insert product
 export const insertProduct = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const {
-      name,
-      amount,
-    } = req.body;
-
-    const product = await Product.create({
-      name,
-      amount,
-    });
+    const product = await productServices.insertProduct(req.body);
 
     return res.status(201).send(product);
   } catch (e) {
+    if (e.response && e.response.status && e.response.data) {
+      return res.status(e.response.status).send({ message: e.response.data.message });
+    }
     logger.error(e);
     return internalError(res);
   }
@@ -29,9 +24,12 @@ export const insertProduct = async (req: Request, res: Response): Promise<Respon
 // service to view all users company
 export const viewAllProducts = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const result = await Product.findAll();
+    const result = await productServices.viewAllProducts();
     return res.json(result);
   } catch (e) {
+    if (e.response && e.response.status && e.response.data) {
+      return res.status(e.response.status).send({ message: e.response.data.message });
+    }
     logger.error(e);
     internalError(res);
   }
@@ -42,16 +40,12 @@ export const viewAllProducts = async (req: Request, res: Response): Promise<Resp
 export const viewProduct = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { idProduct } = req.params;
-    const result = await Product.findOne({
-      where: {
-        idProduct,
-      },
-    });
-    if (result) {
-      return res.json(result);
-    }
-    return notFound(res);
+    const result = await productServices.viewProduct(parseInt(idProduct));
+    return res.json(result);
   } catch (e) {
+    if (e.response && e.response.status && e.response.data) {
+      return res.status(e.response.status).send({ message: e.response.data.message });
+    }
     logger.error(e);
     return internalError(res);
   }
@@ -62,20 +56,13 @@ export const viewProduct = async (req: Request, res: Response): Promise<Response
 export const deleteProduct = async (req: Request, res: Response): Promise<Response> => {
   try {
     const { idProduct } = req.params;
-    const result = await Product.findOne({
-      where: {
-        idProduct,
-      },
-    });
-
-    if (!result) {
-      return notFound(res);
-    }
-
-    await result.destroy();
+    await productServices.deleteProduct(parseInt(idProduct));
 
     return res.status(204).send();
   } catch (e) {
+    if (e.response && e.response.status && e.response.data) {
+      return res.status(e.response.status).send({ message: e.response.data.message });
+    }
     logger.error(e);
     internalError(res);
   }
@@ -84,19 +71,15 @@ export const deleteProduct = async (req: Request, res: Response): Promise<Respon
 // PUT
 // service to edit product
 export const editProduct = async (req: Request, res: Response): Promise<Response> => {
-  const { idProduct } = req.params;
-  const product = await Product.findOne({
-    where: { idProduct },
-  });
-  const {
-    name,
-    amount,
-  } = req.body;
-
-  await product.update({
-    ...product,
-    name,
-    amount,
-  });
-  return res.json(product);
+  try {
+    const { idProduct } = req.params;
+    const product = await productServices.editProduct(parseInt(idProduct), req.body);
+    return res.json(product);
+  } catch (e) {
+    if (e.response && e.response.status && e.response.data) {
+      return res.status(e.response.status).send({ message: e.response.data.message });
+    }
+    logger.error(e);
+    internalError(res);
+  }
 };
