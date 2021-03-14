@@ -1,2 +1,2 @@
 web: yarn tsc
-web: node dist/server.js
+web: node build/server.js
